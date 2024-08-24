@@ -10,38 +10,26 @@ class BookServerHandler(BaseHTTPRequestHandler):
     ]
 
     def do_POST(self):
-        print("Received POST request to adds book")
+        print("Received POST request")
         content_length = int(self.headers["Content-Length"])
         post_data = self.rfile.read(content_length)
 
         try:
             data = json.loads(post_data)
-            book_title = data.get("title")
-            book_author = data.get("author")
-            book_year = data.get("year")
+            action = data.get("action")
 
-            if not book_title or not book_author or not book_year:
+            if action == "add":
+                self.add_book(data)
+            elif action == "delete":
+                self.delete_book(data)
+            else:
                 self.send_response(400)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
-                response = {"status": "error", "message": "Missing required fields"}
+                response = {"status": "error", "message": "Invalid action"}
                 self.wfile.write(json.dumps(response).encode("utf-8"))
-                print("Missing required fields")
+                print("Invalid action")
                 return
-
-            # adds book to the list
-            self.books.append(
-                {"title": book_title, "author": book_author, "year": book_year}
-            )
-            print("Book added successfully")
-
-            # send successfully message
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            response = {"status": "success", "message": "Book added successfully"}
-            self.wfile.write(json.dumps(response).encode("utf-8"))
-            print("Book added successfully")
 
         except json.JSONDecodeError:
             self.send_response(400)
@@ -50,6 +38,67 @@ class BookServerHandler(BaseHTTPRequestHandler):
             response = {"status": "error", "message": "Invalid JSON"}
             self.wfile.write(json.dumps(response).encode("utf-8"))
             print("Error decoding JSON")
+            return
+
+    def add_book(self, data):
+        book_title = data.get("title")
+        book_author = data.get("author")
+        book_year = data.get("year")
+
+        if not book_title or not book_author or not book_year:
+            self.send_response(400)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            response = {"status": "error", "message": "Missing required fields"}
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+            print("Missing required fields")
+            return
+
+        # adds book to the list
+        self.books.append(
+            {"title": book_title, "author": book_author, "year": book_year}
+        )
+        print("Book added successfully")
+
+        # send successfully message
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        response = {"status": "success", "message": "Book added successfully"}
+        self.wfile.write(json.dumps(response).encode("utf-8"))
+        print("Book added successfully")
+        return
+
+    def delete_book(self, data):
+        book_title = data.get("title")
+
+        if not book_title:
+            self.send_response(400)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            response = {"status": "error", "message": "Missing required fields"}
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+            print("Missing required fields")
+            return
+
+        for book in self.books:
+            if book["title"] == book_title:
+                self.books.remove(book)
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                response = {"status": "success", "message": "Book deleted successfully"}
+                self.wfile.write(json.dumps(response).encode("utf-8"))
+                print("Book deleted successfully")
+                return
+
+        self.send_response(404)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        response = {"status": "error", "message": "Book not found"}
+        self.wfile.write(json.dumps(response).encode("utf-8"))
+        print("Book not found")
+        return
 
 
 def run(server_class=HTTPServer, handler_class=BookServerHandler, port=5000):
