@@ -28,6 +28,20 @@ def delete_book(title):
         print("Error deleting book", response.status_code, response.text)
 
 
+def get_books():
+    url = "http://localhost:5000/"
+    headers = {"Content-Type": "application/json"}
+    payload = {"action": "list"}
+
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+    if response.status_code == 200:
+        print("Books retrieved successfully", response.json())
+    else:
+        print("Error retrieving books", response.status_code, response.text)
+
+
 if __name__ == "__main__":
     send_book("The Pragmatic Programmer", "Andrew Hunt, David Thomas", 1999)
     delete_book("1984")
+    get_books()

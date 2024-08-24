@@ -22,6 +22,8 @@ class BookServerHandler(BaseHTTPRequestHandler):
                 self.add_book(data)
             elif action == "delete":
                 self.delete_book(data)
+            elif action == "list":
+                self.get_books(data)
             else:
                 self.send_response(400)
                 self.send_header("Content-type", "application/json")
@@ -98,6 +100,15 @@ class BookServerHandler(BaseHTTPRequestHandler):
         response = {"status": "error", "message": "Book not found"}
         self.wfile.write(json.dumps(response).encode("utf-8"))
         print("Book not found")
+        return
+
+    def get_books(self, data):
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        response = {"status": "success", "books": self.books}
+        self.wfile.write(json.dumps(response).encode("utf-8"))
+        print("Books retrieved successfully")
         return
 
 
